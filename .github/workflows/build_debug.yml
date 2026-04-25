@@ -26,29 +26,34 @@ jobs:
           flutter-version: '3.19.6'
           channel: 'stable'
 
-      # 🔥 Pré-cache dos artefatos Android (essencial para detecção de embedding)
+      # 🔥 Precache dos artefatos Android (essencial para validação de plugins)
       - name: 📦 Precache Android artifacts
         run: flutter precache --android
 
-      # 🔥 Limpeza agressiva de cache
-      - name: 🧹 Limpar build e cache
+      # 🔥 Limpeza de cache para evitar conflitos
+      - name: 🧹 Limpar cache
         run: |
           flutter clean
-          rm -rf android/.gradle android/app/.gradle ~/.pub-cache
+          rm -rf android/.gradle android/app/.gradle
 
-      # 🔥 Configure o embedding EXPLICITAMENTE via CLI (contorna detecção falha)
-      - name: ⚙️ Forçar Embedding V2 via config
+      # ✅ Definir variáveis de ambiente para o Flutter detectar o Android corretamente
+      - name: ⚙️ Configurar ambiente Android
         run: |
-          flutter config --androidx
-          echo "Migrating to AndroidX and Embedding V2..."
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
+          echo "SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
 
       - name: 📦 Instalar dependências
         run: flutter pub get
 
-      # ✅ Validação: confirma que o embedding foi detectado
-      - name: 🔍 Verificar embedding no log
+      # ✅ Validação: confirma que o embedding V2 está presente
+      - name: 🔍 Verificar Embedding V2
         run: |
-          grep -q "flutterEmbedding.*2" android/app/src/main/AndroidManifest.xml && echo "✅ Embedding V2 confirmado no Manifest"
+          if grep -q "flutterEmbedding.*2" android/app/src/main/AndroidManifest.xml; then
+            echo "✅ Embedding V2 confirmado"
+          else
+            echo "❌ Embedding V2 não encontrado!"
+            exit 1
+          fi
 
       - name: 🛠️ Compilar APK (Debug)
         run: flutter build apk --debug
