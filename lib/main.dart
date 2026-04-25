@@ -390,7 +390,7 @@ class ImportScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onTap: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), // CORRIGIDO AQUI
         ),
       ),
       body: SafeArea(
@@ -503,7 +503,7 @@ class ReaderScreen extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.black87),
         leading: isFromNav ? null : IconButton(
           icon: const Icon(Icons.arrow_back),
-          onTap: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context), // CORRIGIDO AQUI
         ),
         title: Column(
           children: [
