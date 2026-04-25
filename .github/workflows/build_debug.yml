@@ -3,7 +3,7 @@ name: Build Debug APK
 on:
   push:
     branches: [ "main", "master" ]
-  workflow_dispatch: # Permite iniciar a compilação manualmente no painel do GitHub
+  workflow_dispatch:
 
 jobs:
   build:
@@ -23,11 +23,22 @@ jobs:
       - name: 🐦 Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.x' # Ajuste para a versão exata que você usa, se preferir
+          flutter-version: '3.19.6'  # ← Use a versão exata para evitar inconsistências
           channel: 'stable'
+
+      # 🔥 LIMPEZA ANTES DE TUDO (essencial para CI)
+      - name: 🧹 Limpar build e cache
+        run: |
+          flutter clean
+          rm -rf android/.gradle android/app/.gradle
 
       - name: 📦 Instalar dependências
         run: flutter pub get
+
+      # ✅ Validação opcional: confirma que o Embedding V2 está detectado
+      - name: 🔍 Verificar Android Embedding
+        run: |
+          grep -q "flutterEmbedding.*2" android/app/src/main/AndroidManifest.xml && echo "✅ Embedding V2 confirmado"
 
       - name: 🛠️ Compilar APK (Debug)
         run: flutter build apk --debug
@@ -37,4 +48,4 @@ jobs:
         with:
           name: app-debug
           path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 1 # O APK ficará disponível por 1 dias no GitHub
+          retention-days: 1
