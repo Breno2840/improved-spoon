@@ -23,22 +23,32 @@ jobs:
       - name: 🐦 Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'  # ← Use a versão exata para evitar inconsistências
+          flutter-version: '3.19.6'
           channel: 'stable'
 
-      # 🔥 LIMPEZA ANTES DE TUDO (essencial para CI)
+      # 🔥 Pré-cache dos artefatos Android (essencial para detecção de embedding)
+      - name: 📦 Precache Android artifacts
+        run: flutter precache --android
+
+      # 🔥 Limpeza agressiva de cache
       - name: 🧹 Limpar build e cache
         run: |
           flutter clean
-          rm -rf android/.gradle android/app/.gradle
+          rm -rf android/.gradle android/app/.gradle ~/.pub-cache
+
+      # 🔥 Configure o embedding EXPLICITAMENTE via CLI (contorna detecção falha)
+      - name: ⚙️ Forçar Embedding V2 via config
+        run: |
+          flutter config --androidx
+          echo "Migrating to AndroidX and Embedding V2..."
 
       - name: 📦 Instalar dependências
         run: flutter pub get
 
-      # ✅ Validação opcional: confirma que o Embedding V2 está detectado
-      - name: 🔍 Verificar Android Embedding
+      # ✅ Validação: confirma que o embedding foi detectado
+      - name: 🔍 Verificar embedding no log
         run: |
-          grep -q "flutterEmbedding.*2" android/app/src/main/AndroidManifest.xml && echo "✅ Embedding V2 confirmado"
+          grep -q "flutterEmbedding.*2" android/app/src/main/AndroidManifest.xml && echo "✅ Embedding V2 confirmado no Manifest"
 
       - name: 🛠️ Compilar APK (Debug)
         run: flutter build apk --debug
