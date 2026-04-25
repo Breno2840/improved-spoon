@@ -7,60 +7,38 @@ on:
 
 jobs:
   build:
-    name: Build APK
     runs-on: ubuntu-latest
-
     steps:
-      - name: 📥 Checkout do código
+      - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: ☕ Configurar Java 17
+      - name: ☕ Configurar Java 11 (Mais estável para build)
         uses: actions/setup-java@v4
         with:
-          distribution: 'zulu'
-          java-version: '17'
+          distribution: 'temurin'
+          java-version: '11'
 
       - name: 🐦 Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.6'
           channel: 'stable'
+          # Não fixar versão aqui deixa o GitHub usar a mais recente do canal stable
 
-      # 🔥 Precache dos artefatos Android (essencial para validação de plugins)
-      - name: 📦 Precache Android artifacts
-        run: flutter precache --android
-
-      # 🔥 Limpeza de cache para evitar conflitos
-      - name: 🧹 Limpar cache
+      - name: 🛠️ Reparar Projeto e Pub Get
         run: |
-          flutter clean
-          rm -rf android/.gradle android/app/.gradle
+          # Deleta arquivos de configuração que podem estar corrompidos
+          rm -rf .dart_tool
+          rm -f .packages
+          rm -f pubspec.lock
+          # Força o Flutter a regenerar os arquivos do Android
+          flutter create . --platforms android
+          flutter pub get
 
-      # ✅ Definir variáveis de ambiente para o Flutter detectar o Android corretamente
-      - name: ⚙️ Configurar ambiente Android
-        run: |
-          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-          echo "SDK_ROOT=$ANDROID_HOME" >> $GITHUB_ENV
-
-      - name: 📦 Instalar dependências
-        run: flutter pub get
-
-      # ✅ Validação: confirma que o embedding V2 está presente
-      - name: 🔍 Verificar Embedding V2
-        run: |
-          if grep -q "flutterEmbedding.*2" android/app/src/main/AndroidManifest.xml; then
-            echo "✅ Embedding V2 confirmado"
-          else
-            echo "❌ Embedding V2 não encontrado!"
-            exit 1
-          fi
-
-      - name: 🛠️ Compilar APK (Debug)
+      - name: 🚀 Compilar APK Debug
         run: flutter build apk --debug
 
-      - name: 🚀 Disponibilizar APK para download
+      - name: 📤 Upload
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: build/app/outputs/flutter-apk/app-debug.apk
-          retention-days: 1
