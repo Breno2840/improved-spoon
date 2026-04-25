@@ -12,32 +12,30 @@ jobs:
       - name: 📥 Checkout
         uses: actions/checkout@v4
 
-      - name: ☕ Configurar Java 11 (Mais estável para build)
+      - name: ☕ Configurar Java 17 (Necessário para Gradle moderno)
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '11'
+          distribution: 'zulu' # Zulu é muito estável para Android
+          java-version: '17'
 
       - name: 🐦 Configurar Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          # Não fixar versão aqui deixa o GitHub usar a mais recente do canal stable
 
       - name: 🛠️ Reparar Projeto e Pub Get
         run: |
-          # Deleta arquivos de configuração que podem estar corrompidos
+          # Limpeza de caches locais
           rm -rf .dart_tool
-          rm -f .packages
           rm -f pubspec.lock
-          # Força o Flutter a regenerar os arquivos do Android
+          # Mantemos o comando que resolveu o erro do file_picker
           flutter create . --platforms android
           flutter pub get
 
       - name: 🚀 Compilar APK Debug
         run: flutter build apk --debug
 
-      - name: 📤 Upload
+      - name: 📤 Disponibilizar APK para download
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
