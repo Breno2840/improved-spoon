@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // Importe o provider
+import 'package:provider/provider.dart';
 import 'screens/main_navigator.dart';
-import 'providers/book_provider.dart'; // Importe o nosso provider
+import 'providers/book_provider.dart';
+import 'providers/settings_provider.dart'; // NOVO IMPORT
 
 void main() {
   runApp(
-    // Envolvemos o app no ChangeNotifierProvider
-    ChangeNotifierProvider(
-      create: (context) => BookProvider(),
+    // Agora usamos MultiProvider para ter vários "cérebros" no app
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => BookProvider()),
+        ChangeNotifierProvider(create: (context) => SettingsProvider()),
+      ],
       child: const EbookReaderApp(),
     ),
   );
