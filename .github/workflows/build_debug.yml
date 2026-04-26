@@ -1,1 +1,42 @@
-#
+name: Build Debug APK
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout
+        uses: actions/checkout@v4
+
+      - name: ☕ Configurar Java 17 (Necessário para Gradle moderno)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu' # Zulu é muito estável para Android
+          java-version: '17'
+
+      - name: 🐦 Configurar Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: 🛠️ Reparar Projeto e Pub Get
+        run: |
+          # Limpeza de caches locais
+          rm -rf .dart_tool
+          rm -f pubspec.lock
+          # Mantemos o comando que resolveu o erro do file_picker
+          flutter create . --platforms android
+          flutter pub get
+
+      - name: 🚀 Compilar APK Debug
+        run: flutter build apk --debug
+
+      - name: 📤 Disponibilizar APK para download
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
