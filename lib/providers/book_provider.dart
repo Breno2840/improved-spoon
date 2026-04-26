@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:epubx/epubx.dart' as epub; // Pacote para ler as entranhas do EPUB
+import 'package:epubx/epubx.dart' as epub;
 import '../models/book.dart';
 
 class BookProvider extends ChangeNotifier {
@@ -23,80 +23,98 @@ class BookProvider extends ChangeNotifier {
     if (booksJson != null) {
       final List<dynamic> decodedList = jsonDecode(booksJson);
       _books = decodedList.map((item) => Book.fromMap(item)).toList();
-      notifyListeners(); // Avisa a interface para se atualizar
+      notifyListeners();
     }
   }
 
-  // Adiciona um novo livro e salva na memória
+  // Adiciona um novo livro, extrai a capa real e os metadados
   Future<void> addBook(Book book) async {
-    // Tenta extrair a capa do arquivo antes de salvar
-    String? extractedCoverPath = await _extractAndSaveCover(book.filePath, book.id, book.type);
-
-    // Se conseguiu achar uma capa, atualizamos o objeto Book
-    if (extractedCoverPath != null) {
-      book = Book(
-        id: book.id,
-        title: book.title,
-        author: book.author,
-        filePath: book.filePath,
-        type: book.type,
-        progress: book.progress,
-        lastPageRead: book.lastPageRead,
-        coverPath: extractedCoverPath, // <--- Salvando o caminho da imagem real
-      );
-    }
-
-    _books.add(book);
-    notifyListeners(); // Atualiza a tela imediatamente
-    await _saveToStorage();
-  }
-
-  // Função mágica que vasculha o arquivo atrás da capa
-  Future<String?> _extractAndSaveCover(String filePath, String bookId, BookType type) async {
-    try {
-      if (type == BookType.epub) {
-        final file = File(filePath);
+    if (book.type == BookType.epub) {
+      try {
+        final file = File(book.filePath);
         final bytes = await file.readAsBytes();
         
         // Abre o livro em memória usando o epubx
         final epubBook = await epub.EpubReader.readBook(bytes);
 
-        // Verifica se o livro tem imagens dentro dele
+        // 1. Extrai o Título e o Autor reais de dentro do arquivo!
+        String realTitle = (epubBook.Title != null && epubBook.Title!.isNotEmpty) 
+            ? epubBook.Title! 
+            : book.title;
+            
+        String realAuthor = (epubBook.Author != null && epubBook.Author!.isNotEmpty) 
+            ? epubBook.Author! 
+            : book.author;
+
+        // 2. Lógica avançada para achar a capa real
+        String? extractedCoverPath;
+        
         if (epubBook.Content?.Images != null && epubBook.Content!.Images!.isNotEmpty) {
           epub.EpubByteContentFile? coverFileContent;
 
-          // Procura por alguma imagem que tenha "cover" no nome (padrão da maioria dos EPUBs)
+          // Tentativa A: Procurar pelo nome (cover, capa, front)
           for (var image in epubBook.Content!.Images!.values) {
-            if (image.FileName != null && image.FileName!.toLowerCase().contains('cover')) {
+            final fileName = image.FileName?.toLowerCase() ?? '';
+            if (fileName.contains('cover') || fileName.contains('capa') || fileName.contains('front')) {
               coverFileContent = image;
               break;
             }
           }
 
-          // Se não achou com o nome 'cover', chuta a primeira imagem que tiver no livro
-          coverFileContent ??= epubBook.Content!.Images!.values.first;
+          // Tentativa B: O truque da imagem mais pesada!
+          // Se não achou pelo nome, a capa com certeza é o arquivo de imagem com mais bytes no livro.
+          if (coverFileContent == null) {
+            var largestImage = epubBook.Content!.Images!.values.first;
+            
+            for (var image in epubBook.Content!.Images!.values) {
+              if (image.Content != null && largestImage.Content != null) {
+                if (image.Content!.length > largestImage.Content!.length) {
+                  largestImage = image; // Atualiza se achar uma imagem mais pesada
+                }
+              }
+            }
+            coverFileContent = largestImage;
+          }
 
+          // Salva a imagem encontrada na pasta do app
           if (coverFileContent.Content != null) {
-            // Descobre a pasta secreta do seu aplicativo no celular
             final directory = await getApplicationDocumentsDirectory();
-            final coverPath = '${directory.path}/cover_$bookId.jpg';
+            final coverPath = '${directory.path}/cover_${book.id}.jpg';
             final coverFile = File(coverPath);
-
-            // Escreve a imagem lá dentro
             await coverFile.writeAsBytes(coverFileContent.Content!);
-            return coverPath; // Retorna onde a imagem foi parar
+            extractedCoverPath = coverPath;
           }
         }
+
+        // Atualizamos o objeto Book com os dados de verdade que encontramos
+        book = Book(
+          id: book.id,
+          title: realTitle,
+          author: realAuthor,
+          filePath: book.filePath,
+          type: book.type,
+          progress: book.progress,
+          lastPageRead: book.lastPageRead,
+          coverPath: extractedCoverPath,
+        );
+
+      } catch (e) {
+        debugPrint('Erro ao ler os metadados do EPUB: $e');
       }
-      // Nota: Extrair capa de PDF exige renderizar a primeira página. 
-      // Por enquanto, o PDF vai usar a cor sólida.
-    } catch (e) {
-      debugPrint('Erro ao extrair capa: $e');
     }
-    return null;
+
+    _books.add(book);
+    notifyListeners(); 
+    await _saveToStorage();
   }
 
-  // Salva a lista atualizada no armazenamento do celular
+  // Deleta um livro da biblioteca (Útil para você apagar esse livro bugado)
+  Future<void> removeBook(String id) async {
+    _books.removeWhere((book) => book.id == id);
+    notifyListeners();
+    await _saveToStorage();
+  }
+
   Future<void> _saveToStorage() async {
     final prefs = await SharedPreferences.getInstance();
     final String encodedList = jsonEncode(_books.map((book) => book.toMap()).toList());
