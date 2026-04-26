@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../widgets/glass_container.dart';
@@ -11,7 +12,6 @@ class LibraryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Usamos o Consumer para a tela reagir sempre que um livro for adicionado ou removido
     return Consumer<BookProvider>(
       builder: (context, bookProvider, child) {
         final List<Book> myBooks = bookProvider.books;
@@ -36,7 +36,6 @@ class LibraryScreen extends StatelessWidget {
                               Text('Seus livros, do seu jeito.', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6))),
                             ],
                           ),
-                          // Só mostra o botão pequeno de importar no topo se a biblioteca NÃO estiver vazia
                           if (myBooks.isNotEmpty)
                             InkWell(
                               onTap: () {
@@ -62,7 +61,6 @@ class LibraryScreen extends StatelessWidget {
                         ],
                       ),
                       
-                      // A barra de pesquisa só aparece se tiver 2 ou mais livros
                       if (myBooks.length >= 2) ...[
                         const SizedBox(height: 24),
                         GlassContainer(
@@ -79,7 +77,6 @@ class LibraryScreen extends StatelessWidget {
                         ),
                       ],
 
-                      // Os filtros só aparecem se a lista NÃO estiver vazia
                       if (myBooks.isNotEmpty) ...[
                         const SizedBox(height: 20),
                         Row(
@@ -97,7 +94,6 @@ class LibraryScreen extends StatelessWidget {
                 ),
               ),
               
-              // Verifica se a lista está vazia para mostrar o Empty State
               if (myBooks.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
@@ -115,11 +111,9 @@ class LibraryScreen extends StatelessWidget {
                     ),
                     delegate: SliverChildBuilderDelegate(
                       (context, index) {
-                        // Se for o último item do grid, renderiza o card especial de importar
                         if (index == myBooks.length) {
                           return _buildImportCard(context);
                         }
-                        // Renderiza a capa do livro
                         return _buildBookCard(context, myBooks[index], index);
                       },
                       childCount: myBooks.length + 1,
@@ -135,9 +129,6 @@ class LibraryScreen extends StatelessWidget {
     );
   }
 
-  // ==========================================
-  // ESTADO VAZIO (EMPTY STATE)
-  // ==========================================
   Widget _buildEmptyState(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32.0),
@@ -200,9 +191,40 @@ class LibraryScreen extends StatelessWidget {
   }
 
   Widget _buildBookCard(BuildContext context, Book book, int index) {
-    // Cores aleatórias simulando capas de livros
-    final colors = [Colors.green.shade900, Colors.red.shade900, Colors.brown.shade800, Colors.blueGrey.shade800, Colors.indigo.shade900];
-    final color = colors[index % colors.length];
+    // LÓGICA DE CAPA: Decide se mostra a imagem ou a cor de fundo
+    Widget coverWidget;
+
+    if (book.coverPath != null && File(book.coverPath!).existsSync()) {
+      // Tem capa! Desenha a imagem do arquivo local
+      coverWidget = Image.file(
+        File(book.coverPath!),
+        fit: BoxFit.cover,
+        width: double.infinity,
+        height: double.infinity,
+      );
+    } else {
+      // Não tem capa (ou é PDF). Desenha as cores falsas.
+      final colors = [Colors.green.shade900, Colors.red.shade900, Colors.brown.shade800, Colors.blueGrey.shade800, Colors.indigo.shade900];
+      final color = colors[index % colors.length];
+
+      coverWidget = Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [color, Colors.black87]),
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              book.title, 
+              textAlign: TextAlign.center, 
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ),
+      );
+    }
 
     return GestureDetector(
       onTap: () {
@@ -215,30 +237,34 @@ class LibraryScreen extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [color, Colors.black87]),
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
               ),
-              child: Stack(
-                children: [
-                  Center(child: Text(book.title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-                  Positioned(
-                    top: 8, right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
-                      child: Text(book.type.name.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white70)),
+              child: ClipRRect( // ClipRRect aqui garante que as bordas da imagem fiquem arredondadas
+                borderRadius: BorderRadius.circular(8),
+                child: Stack(
+                  children: [
+                    coverWidget,
+                    
+                    Positioned(
+                      top: 8, right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+                        child: Text(book.type.name.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white70)),
+                      ),
                     ),
-                  ),
-                  Positioned(
-                    bottom: 0, left: 0, right: 0,
-                    child: LinearProgressIndicator(
-                      value: book.progress, 
-                      backgroundColor: Colors.white.withOpacity(0.2), 
-                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), 
-                      minHeight: 4
-                    ),
-                  )
-                ],
+                    
+                    Positioned(
+                      bottom: 0, left: 0, right: 0,
+                      child: LinearProgressIndicator(
+                        value: book.progress, 
+                        backgroundColor: Colors.white.withOpacity(0.2), 
+                        valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), 
+                        minHeight: 4
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
           ),
