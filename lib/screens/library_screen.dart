@@ -191,11 +191,9 @@ class LibraryScreen extends StatelessWidget {
   }
 
   Widget _buildBookCard(BuildContext context, Book book, int index) {
-    // LÓGICA DE CAPA: Decide se mostra a imagem ou a cor de fundo
     Widget coverWidget;
 
     if (book.coverPath != null && File(book.coverPath!).existsSync()) {
-      // Tem capa! Desenha a imagem do arquivo local
       coverWidget = Image.file(
         File(book.coverPath!),
         fit: BoxFit.cover,
@@ -203,7 +201,6 @@ class LibraryScreen extends StatelessWidget {
         height: double.infinity,
       );
     } else {
-      // Não tem capa (ou é PDF). Desenha as cores falsas.
       final colors = [Colors.green.shade900, Colors.red.shade900, Colors.brown.shade800, Colors.blueGrey.shade800, Colors.indigo.shade900];
       final color = colors[index % colors.length];
 
@@ -228,7 +225,8 @@ class LibraryScreen extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Navigator.push(context, MaterialPageRoute(builder: (_) => const ReaderScreen(isFromNav: false)));
+        // A MÁGICA: Aqui enviamos o "book" clicado para a ReaderScreen ler!
+        Navigator.push(context, MaterialPageRoute(builder: (_) => ReaderScreen(isFromNav: false, book: book)));
       },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -239,7 +237,7 @@ class LibraryScreen extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8),
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
               ),
-              child: ClipRRect( // ClipRRect aqui garante que as bordas da imagem fiquem arredondadas
+              child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: Stack(
                   children: [
