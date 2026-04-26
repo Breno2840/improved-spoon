@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../widgets/glass_container.dart';
+import '../models/book.dart';
+import '../utils/mock_data.dart';
 import 'import_screen.dart';
 import 'reader_screen.dart';
 
@@ -89,12 +91,15 @@ class LibraryScreen extends StatelessWidget {
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  if (index == 5) {
+                  // Se for o último item da lista, renderiza o botão especial de importar
+                  if (index == mockBooks.length) {
                     return _buildImportCard(context);
                   }
-                  return _buildBookCard(context, index);
+                  // Renderiza o livro passando o objeto Book diretamente
+                  return _buildBookCard(context, mockBooks[index], index);
                 },
-                childCount: 6,
+                // A quantidade de itens é o total de livros + 1 (o botão de importar)
+                childCount: mockBooks.length + 1,
               ),
             ),
           ),
@@ -116,11 +121,11 @@ class LibraryScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildBookCard(BuildContext context, int index) {
-    final titles = ["O Hobbit", "1984", "Dom Casmurro", "Orgulho e Preconceito", "Moby Dick"];
-    final authors = ["J.R.R. Tolkien", "George Orwell", "Machado de Assis", "Jane Austen", "Herman Melville"];
-    final progresses = [68, 42, 23, 100, 17];
+  // Agora recebe um objeto Book
+  Widget _buildBookCard(BuildContext context, Book book, int index) {
+    // Cores aleatórias simulando capas de livros para o layout ficar bonito
     final colors = [Colors.green.shade900, Colors.red.shade900, Colors.brown.shade800, Colors.blueGrey.shade800, Colors.indigo.shade900];
+    final color = colors[index % colors.length];
 
     return GestureDetector(
       onTap: () {
@@ -133,23 +138,37 @@ class LibraryScreen extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [colors[index % colors.length], Colors.black87]),
+                gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [color, Colors.black87]),
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 4))],
               ),
               child: Stack(
                 children: [
-                  Center(child: Text(titles[index], textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                  Center(child: Text(book.title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
+                  // Distintivo de formato (EPUB ou PDF) na capa
+                  Positioned(
+                    top: 8, right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(4)),
+                      child: Text(book.type.name.toUpperCase(), style: const TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.white70)),
+                    ),
+                  ),
                   Positioned(
                     bottom: 0, left: 0, right: 0,
-                    child: LinearProgressIndicator(value: progresses[index] / 100, backgroundColor: Colors.white.withOpacity(0.2), valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), minHeight: 4),
+                    child: LinearProgressIndicator(
+                      value: book.progress, 
+                      backgroundColor: Colors.white.withOpacity(0.2), 
+                      valueColor: AlwaysStoppedAnimation<Color>(Theme.of(context).colorScheme.primary), 
+                      minHeight: 4
+                    ),
                   )
                 ],
               ),
             ),
           ),
           const SizedBox(height: 8),
-          Text(titles[index], maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          Text(authors[index], maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
+          Text(book.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+          Text(book.author, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 11)),
         ],
       ),
     );
