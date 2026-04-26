@@ -1,8 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Importe o provider
 import 'screens/main_navigator.dart';
+import 'providers/book_provider.dart'; // Importe o nosso provider
 
 void main() {
-  runApp(const EbookReaderApp());
+  runApp(
+    // Envolvemos o app no ChangeNotifierProvider
+    ChangeNotifierProvider(
+      create: (context) => BookProvider(),
+      child: const EbookReaderApp(),
+    ),
+  );
 }
 
 class EbookReaderApp extends StatelessWidget {
