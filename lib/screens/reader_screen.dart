@@ -114,7 +114,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
         swipeHorizontal: true,
         autoSpacing: false,
         pageFling: true,
-        backgroundColor: const [244, 234, 213], // Fundo Sépia em RGB
+        backgroundColor: const Color(0xFFF4EAD5), // CORRIGIDO AQUI!
       );
     } else {
       return const Center(child: Text('Formato não suportado', style: TextStyle(color: Colors.black)));
