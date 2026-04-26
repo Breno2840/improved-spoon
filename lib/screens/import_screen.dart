@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:provider/provider.dart';
 import '../widgets/glass_container.dart';
-import '../models/book.dart'; // Para sabermos se estamos buscando EPUB ou PDF
+import '../models/book.dart';
+import '../providers/book_provider.dart';
 
 class ImportScreen extends StatefulWidget {
   const ImportScreen({super.key});
@@ -33,21 +35,32 @@ class _ImportScreenState extends State<ImportScreen> {
       if (result != null && result.files.single.path != null) {
         String filePath = result.files.single.path!;
         String fileName = result.files.single.name;
+        
+        // Remove a extensão do nome para ficar limpo na tela
+        String titleWithoutExt = fileName.replaceAll(RegExp(r'\.(epub|pdf)$', caseSensitive: false), '');
 
-        // Por enquanto, apenas confirmamos que pegamos o arquivo certinho
-        // Futuramente, aqui será onde salvaremos o livro no banco de dados
-        debugPrint('Arquivo selecionado: $filePath');
+        // Criamos o objeto Livro
+        final newBook = Book(
+          id: DateTime.now().millisecondsSinceEpoch.toString(), // Gera um ID único baseado no tempo
+          title: titleWithoutExt,
+          author: 'Desconhecido', // Metadado placeholder
+          filePath: filePath,
+          type: type,
+        );
 
         if (mounted) {
+          // Salva o livro no Provider (que por sua vez salva no SharedPreferences)
+          Provider.of<BookProvider>(context, listen: false).addBook(newBook);
+
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('$fileName pronto para leitura!'),
+              content: Text('$titleWithoutExt adicionado à biblioteca!'),
               backgroundColor: Theme.of(context).colorScheme.primary,
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
           );
-          // Volta para a tela da biblioteca após selecionar
+          // Volta para a tela da biblioteca
           Navigator.pop(context);
         }
       }
@@ -165,7 +178,7 @@ class _ImportScreenState extends State<ImportScreen> {
               ),
             ),
 
-            // Camada de Loading (Feedback visual se o celular demorar para abrir os arquivos)
+            // Camada de Loading (Feedback visual enquanto o explorador de arquivos não abre)
             if (_isLoading)
               Container(
                 color: Colors.black54,
@@ -179,7 +192,6 @@ class _ImportScreenState extends State<ImportScreen> {
     );
   }
 
-  // O componente agora recebe a função onTap
   Widget _buildImportOption(
     BuildContext context, {
     required String title,
