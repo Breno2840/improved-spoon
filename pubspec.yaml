@@ -29,6 +29,12 @@ dependencies:
   # Fontes bonitas e fáceis para a interface (Inter, Lora, etc.)
   google_fonts: ^6.2.1
 
+  # Gerenciamento de estado
+  provider: ^6.1.2
+
+  # Persistência local simples (salvar progresso de leitura, tema, etc.)
+  shared_preferences: ^2.2.3
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
