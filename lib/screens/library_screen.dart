@@ -30,30 +30,34 @@ class LibraryScreen extends StatelessWidget {
                           Text('Seus livros, do seu jeito.', style: TextStyle(fontSize: 14, color: Colors.white.withOpacity(0.6))),
                         ],
                       ),
-                      InkWell(
-                        onTap: () {
-                          Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportScreen()));
-                        },
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+                      // Só mostra o botão pequeno de importar no topo se a biblioteca NÃO estiver vazia
+                      if (mockBooks.isNotEmpty)
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportScreen()));
+                          },
+                          borderRadius: BorderRadius.circular(16),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(16),
+                              border: Border.all(color: Theme.of(context).colorScheme.primary.withOpacity(0.5)),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.add, color: Theme.of(context).colorScheme.primary, size: 20),
+                                const SizedBox(width: 8),
+                                Text('Importar', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
+                              ],
+                            ),
                           ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.add, color: Theme.of(context).colorScheme.primary, size: 20),
-                              const SizedBox(width: 8),
-                              Text('Importar', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      )
+                        )
                     ],
                   ),
                   const SizedBox(height: 24),
+                  
+                  // Barra de busca
                   GlassContainer(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                     borderRadius: 16,
@@ -67,6 +71,8 @@ class LibraryScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  
+                  // Filtros
                   Row(
                     children: [
                       _buildFilterChip(context, 'Todos', true),
@@ -80,34 +86,96 @@ class LibraryScreen extends StatelessWidget {
               ),
             ),
           ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            sliver: SliverGrid(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                childAspectRatio: 0.55,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 24,
-              ),
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  // Se for o último item da lista, renderiza o botão especial de importar
-                  if (index == mockBooks.length) {
-                    return _buildImportCard(context);
-                  }
-                  // Renderiza o livro passando o objeto Book diretamente
-                  return _buildBookCard(context, mockBooks[index], index);
-                },
-                // A quantidade de itens é o total de livros + 1 (o botão de importar)
-                childCount: mockBooks.length + 1,
+          
+          // A MÁGICA ACONTECE AQUI: Verifica se a lista está vazia
+          if (mockBooks.isEmpty)
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: _buildEmptyState(context),
+            )
+          else
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 3,
+                  childAspectRatio: 0.55,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 24,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    if (index == mockBooks.length) {
+                      return _buildImportCard(context);
+                    }
+                    return _buildBookCard(context, mockBooks[index], index);
+                  },
+                  childCount: mockBooks.length + 1,
+                ),
               ),
             ),
-          ),
+            
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
       ),
     );
   }
+
+  // ==========================================
+  // ESTADO VAZIO (EMPTY STATE)
+  // ==========================================
+  Widget _buildEmptyState(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32.0),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          // Ícone gigante decorativo
+          Container(
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.auto_stories_rounded, 
+              size: 80, 
+              color: Theme.of(context).colorScheme.primary.withOpacity(0.6)
+            ),
+          ),
+          const SizedBox(height: 32),
+          const Text(
+            'Sua estante está vazia', 
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Importe seus arquivos EPUB ou PDF para começar a sua leitura offline e privada.', 
+            textAlign: TextAlign.center, 
+            style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.5)
+          ),
+          const SizedBox(height: 40),
+          
+          // Botão principal de ação
+          ElevatedButton.icon(
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportScreen())),
+            icon: const Icon(Icons.add_circle_outline),
+            label: const Text('Importar meu primeiro livro', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              elevation: 8,
+              shadowColor: Theme.of(context).colorScheme.primary.withOpacity(0.5),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+
+  // ... (O resto do código: _buildFilterChip, _buildBookCard, _buildImportCard continua exatamente igual)
 
   Widget _buildFilterChip(BuildContext context, String label, bool isSelected) {
     return Container(
@@ -121,9 +189,7 @@ class LibraryScreen extends StatelessWidget {
     );
   }
 
-  // Agora recebe um objeto Book
   Widget _buildBookCard(BuildContext context, Book book, int index) {
-    // Cores aleatórias simulando capas de livros para o layout ficar bonito
     final colors = [Colors.green.shade900, Colors.red.shade900, Colors.brown.shade800, Colors.blueGrey.shade800, Colors.indigo.shade900];
     final color = colors[index % colors.length];
 
@@ -144,7 +210,6 @@ class LibraryScreen extends StatelessWidget {
               child: Stack(
                 children: [
                   Center(child: Text(book.title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))),
-                  // Distintivo de formato (EPUB ou PDF) na capa
                   Positioned(
                     top: 8, right: 8,
                     child: Container(
