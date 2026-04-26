@@ -16,7 +16,7 @@ class _MainNavigatorState extends State<MainNavigator> {
 
   final List<Widget> _screens = [
     const LibraryScreen(),
-    const ReaderScreen(isFromNav: true),
+    const ReaderScreen(isFromNav: true, book: null), // <--- Passamos null porque viemos da aba inferior
     const Center(child: Text('Marcadores - Em breve', style: TextStyle(color: Colors.white))),
     const SettingsScreen(),
   ];
@@ -29,8 +29,8 @@ class _MainNavigatorState extends State<MainNavigator> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1E1533), // Roxo bem escuro
-            Color(0xFF0A0A0F), // Quase preto
+            Color(0xFF1E1533),
+            Color(0xFF0A0A0F),
           ],
         ),
       ),
