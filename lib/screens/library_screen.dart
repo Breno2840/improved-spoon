@@ -55,39 +55,43 @@ class LibraryScreen extends StatelessWidget {
                         )
                     ],
                   ),
-                  const SizedBox(height: 24),
                   
-                  // Barra de busca
-                  GlassContainer(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    borderRadius: 16,
-                    child: TextField(
-                      decoration: InputDecoration(
-                        icon: Icon(Icons.search, color: Colors.white.withOpacity(0.5)),
-                        hintText: 'Buscar livro',
-                        hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
-                        border: InputBorder.none,
+                  // MÁGICA: A barra de pesquisa só aparece se tiver 2 ou mais livros
+                  if (mockBooks.length >= 2) ...[
+                    const SizedBox(height: 24),
+                    GlassContainer(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      borderRadius: 16,
+                      child: TextField(
+                        decoration: InputDecoration(
+                          icon: Icon(Icons.search, color: Colors.white.withOpacity(0.5)),
+                          hintText: 'Buscar livro',
+                          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                          border: InputBorder.none,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  // Filtros
-                  Row(
-                    children: [
-                      _buildFilterChip(context, 'Todos', true),
-                      const SizedBox(width: 12),
-                      _buildFilterChip(context, 'EPUB', false),
-                      const SizedBox(width: 12),
-                      _buildFilterChip(context, 'PDF', false),
-                    ],
-                  ),
+                  ],
+
+                  // MÁGICA: Os filtros só aparecem se a lista NÃO estiver vazia
+                  if (mockBooks.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Row(
+                      children: [
+                        _buildFilterChip(context, 'Todos', true),
+                        const SizedBox(width: 12),
+                        _buildFilterChip(context, 'EPUB', false),
+                        const SizedBox(width: 12),
+                        _buildFilterChip(context, 'PDF', false),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
           ),
           
-          // A MÁGICA ACONTECE AQUI: Verifica se a lista está vazia
+          // Verifica se a lista está vazia para mostrar o Empty State
           if (mockBooks.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
@@ -130,7 +134,6 @@ class LibraryScreen extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Ícone gigante decorativo
           Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
@@ -156,7 +159,6 @@ class LibraryScreen extends StatelessWidget {
           ),
           const SizedBox(height: 40),
           
-          // Botão principal de ação
           ElevatedButton.icon(
             onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ImportScreen())),
             icon: const Icon(Icons.add_circle_outline),
@@ -174,8 +176,6 @@ class LibraryScreen extends StatelessWidget {
       ),
     );
   }
-
-  // ... (O resto do código: _buildFilterChip, _buildBookCard, _buildImportCard continua exatamente igual)
 
   Widget _buildFilterChip(BuildContext context, String label, bool isSelected) {
     return Container(
