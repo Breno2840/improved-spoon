@@ -1,3 +1,4 @@
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:epub_view/epub_view.dart';
@@ -118,8 +119,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       
       return EpubView(
         controller: _epubController!,
-        // MÁGICA AQUI: Define se desliza pro lado (Horizontal) ou desce (Vertical)
-        scrollDirection: settings.isPageMode ? Axis.horizontal : Axis.vertical,
+        // Comando scrollDirection removido daqui para não dar erro!
         onDocumentLoaded: (doc) {
           setState(() { _progressText = 'Livro pronto!'; });
         },
@@ -131,10 +131,10 @@ class _ReaderScreenState extends State<ReaderScreen> {
       return PDFView(
         filePath: book.filePath,
         enableSwipe: true,
-        // MÁGICA AQUI: Define se desliza pro lado (Horizontal) ou desce (Vertical)
+        // No PDF o comando funciona e a mágica acontece
         swipeHorizontal: settings.isPageMode,
         pageFling: true,
-        pageSnap: true, // Garante que a página "encaixe" na tela quando deslizar
+        pageSnap: true, 
         backgroundColor: bgColor, 
         onPageChanged: (int? page, int? total) {
           if (page != null && total != null && total > 0) {
