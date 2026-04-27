@@ -8,7 +8,6 @@ class AppearanceBottomSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Escuta as configurações em tempo real
     final settings = Provider.of<SettingsProvider>(context);
 
     return GlassContainer(
@@ -67,6 +66,18 @@ class AppearanceBottomSheet extends StatelessWidget {
               const Text('A+', style: TextStyle(fontSize: 20)),
             ],
           ),
+          const SizedBox(height: 24),
+          
+          const Text('Modo de leitura', style: TextStyle(color: Colors.white70)),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              // MÁGICA: Conectamos os botões na função nova do provider!
+              Expanded(child: _buildModeBtn('Página', Icons.menu_book, true, settings)),
+              const SizedBox(width: 16),
+              Expanded(child: _buildModeBtn('Rolagem', Icons.swap_vert, false, settings)),
+            ],
+          ),
           const SizedBox(height: 16),
         ],
       ),
@@ -108,6 +119,29 @@ class AppearanceBottomSheet extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(font, style: TextStyle(fontFamily: font, color: isSelected ? Colors.deepPurpleAccent : Colors.white)),
+      ),
+    );
+  }
+
+  Widget _buildModeBtn(String label, IconData icon, bool isPageBtn, SettingsProvider settings) {
+    bool isSelected = settings.isPageMode == isPageBtn;
+    return GestureDetector(
+      onTap: () => settings.setPageMode(isPageBtn),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.deepPurpleAccent.withOpacity(0.2) : Colors.transparent,
+          border: Border.all(color: isSelected ? Colors.deepPurpleAccent : Colors.white24),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: isSelected ? Colors.deepPurpleAccent : Colors.white70),
+            const SizedBox(width: 8),
+            Text(label, style: TextStyle(color: isSelected ? Colors.deepPurpleAccent : Colors.white70, fontWeight: FontWeight.bold)),
+          ],
+        ),
       ),
     );
   }
