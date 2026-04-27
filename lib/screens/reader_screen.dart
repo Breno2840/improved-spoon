@@ -20,7 +20,6 @@ class ReaderScreen extends StatefulWidget {
 class _ReaderScreenState extends State<ReaderScreen> {
   EpubController? _epubController;
   
-  // Variáveis para controlar o progresso
   double _progress = 0.0;
   String _progressText = 'Carregando...';
 
@@ -40,7 +39,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     super.dispose();
   }
 
-  // Lógica para pegar a cor de fundo escolhida
   Color _getBackgroundColor(String theme) {
     switch (theme) {
       case 'claro': return Colors.white;
@@ -50,7 +48,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
     }
   }
 
-  // Lógica para pegar a cor do texto (escuro se o fundo for claro, claro se o fundo for escuro)
   Color _getTextColor(String theme) {
     switch (theme) {
       case 'claro': return Colors.black87;
@@ -80,7 +77,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        iconTheme: IconThemeData(color: textColor), // Ícone escuro ou claro dependendo do tema
+        iconTheme: IconThemeData(color: textColor), 
         leading: widget.isFromNav ? null : IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
@@ -95,7 +92,6 @@ class _ReaderScreenState extends State<ReaderScreen> {
       ),
       body: Stack(
         children: [
-          // AQUI ESTÁ O TRUQUE: Envolver o leitor em um DefaultTextStyle para forçar a cor e fonte!
           Positioned.fill(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 90.0),
@@ -105,7 +101,7 @@ class _ReaderScreenState extends State<ReaderScreen> {
                   fontSize: settings.fontSize,
                   fontFamily: settings.fontFamily,
                 ),
-                child: _buildReaderContent(book, bgColor),
+                child: _buildReaderContent(book, bgColor, settings),
               ),
             ),
           ),
@@ -116,31 +112,30 @@ class _ReaderScreenState extends State<ReaderScreen> {
     );
   }
 
-  Widget _buildReaderContent(Book book, Color bgColor) {
+  Widget _buildReaderContent(Book book, Color bgColor, SettingsProvider settings) {
     if (book.type == BookType.epub) {
       if (_epubController == null) return const Center(child: CircularProgressIndicator());
       
       return EpubView(
         controller: _epubController!,
-        // Tenta capturar a mudança de capítulo no EPUB
+        // MÁGICA AQUI: Define se desliza pro lado (Horizontal) ou desce (Vertical)
+        scrollDirection: settings.isPageMode ? Axis.horizontal : Axis.vertical,
         onDocumentLoaded: (doc) {
           setState(() { _progressText = 'Livro pronto!'; });
         },
         onChapterChanged: (chapter) {
-          setState(() {
-            _progressText = 'Capítulo atual'; // EPUBs não tem páginas exatas, eles são fluidos
-          });
+          setState(() { _progressText = 'Capítulo atual'; });
         },
       );
     } else if (book.type == BookType.pdf) {
       return PDFView(
         filePath: book.filePath,
         enableSwipe: true,
-        swipeHorizontal: true,
-        autoSpacing: false,
+        // MÁGICA AQUI: Define se desliza pro lado (Horizontal) ou desce (Vertical)
+        swipeHorizontal: settings.isPageMode,
         pageFling: true,
-        backgroundColor: bgColor, // Usa a cor do tema
-        // Captura a troca de páginas do PDF!
+        pageSnap: true, // Garante que a página "encaixe" na tela quando deslizar
+        backgroundColor: bgColor, 
         onPageChanged: (int? page, int? total) {
           if (page != null && total != null && total > 0) {
             setState(() {
